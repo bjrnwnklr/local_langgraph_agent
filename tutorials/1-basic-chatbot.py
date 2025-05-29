@@ -1,5 +1,4 @@
 import os
-import json
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -10,9 +9,10 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.types import Command, interrupt
 
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import ToolMessage
+from langchain.tools import tool
 
 from langchain_tavily import TavilySearch
 
@@ -45,15 +45,28 @@ memory = MemorySaver()
 # construct the graph
 graph_builder = StateGraph(State)
 
+
 # define tools
-tool = TavilySearch(max_results=2)
-tools = [tool]
+@tool
+def human_assistance(query: str) -> str:
+    """Request assistance from a human."""
+    human_response = interrupt({"query": query})
+    return human_response["data"]
+
+
+search_tool = TavilySearch(max_results=2)
+tools = [search_tool, human_assistance]
 llm_with_tools = llm.bind_tools(tools)
 
 
 # define chatbot and add to graph
 def chatbot(state: State):
-    return {"messages": [llm_with_tools.invoke(state["messages"])]}
+    message = llm_with_tools.invoke(state["messages"])
+    # because we will be interrupting during tool execution,
+    # we disable parallel tool calling to avoid repeating any
+    # tool invocations when we resume.
+    assert len(message.tool_calls) <= 1
+    return {"messages": [message]}
 
 
 graph_builder.add_node("chatbot", chatbot)
@@ -64,7 +77,7 @@ graph_builder.add_edge(START, "chatbot")
 # this will route from the chatbot if the returned ai_message
 # contains an attribute "tool_calls", which is the universal
 # standard in LLMs to show that a tool needs to be called.
-tool_node = ToolNode(tools=[tool])
+tool_node = ToolNode(tools=tools)
 graph_builder.add_node("tools", tool_node)
 
 graph_builder.add_conditional_edges(
@@ -91,22 +104,50 @@ def stream_graph_updates(user_input: str):
 
 def main():
 
-    while True:
-        try:
-            user_input = input("User: ")
-            if user_input.lower() in ["quit", "exit", "q"]:
-                print("Goodbye my friend!")
-                break
-            stream_graph_updates(user_input)
-            # inspect state
-            snapshot = graph.get_state(config)
-            print(snapshot)
-        except:
-            # fallback if input() is not available
-            # user_input = "What do you know about Iron Maiden?"
-            # print("User: " + user_input)
-            # stream_graph_updates(user_input)
-            break
+    user_input = "I need some expert guidance for building an AI agent. Could you request assistance for me?"
+    config = {"configurable": {"thread_id": "1"}}
+
+    events = graph.stream(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config,
+        stream_mode="values",
+    )
+    for event in events:
+        if "messages" in event:
+            event["messages"][-1].pretty_print()
+
+    snapshot = graph.get_state(config)
+    print(snapshot)
+    print(snapshot.next)
+
+    human_response = (
+        "We, the experts are here to help! We'd recommend you check out LangGraph to build your agent."
+        " It's much more reliable and extensible than simple autonomous agents."
+    )
+
+    human_command = Command(resume={"data": human_response})
+
+    events = graph.stream(human_command, config, stream_mode="values")
+    for event in events:
+        if "messages" in event:
+            event["messages"][-1].pretty_print()
+
+    # while True:
+    #     try:
+    #         user_input = input("User: ")
+    #         if user_input.lower() in ["quit", "exit", "q"]:
+    #             print("Goodbye my friend!")
+    #             break
+    #         stream_graph_updates(user_input)
+    #         # inspect state
+    #         # snapshot = graph.get_state(config)
+    #         # print(snapshot)
+    #     except:
+    #         # fallback if input() is not available
+    #         # user_input = "What do you know about Iron Maiden?"
+    #         # print("User: " + user_input)
+    #         # stream_graph_updates(user_input)
+    #         break
 
 
 if __name__ == "__main__":
