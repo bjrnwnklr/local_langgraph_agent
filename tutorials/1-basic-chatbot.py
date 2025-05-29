@@ -9,6 +9,7 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.memory import MemorySaver
 
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import ToolMessage
@@ -27,7 +28,7 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 if not TAVILY_API_KEY:
     raise RuntimeError("Missing TAVILY_API_KEY in .local.env")
 
-
+config = {"configurable": {"thread_id": "1"}}
 llm = init_chat_model("openai:gpt-4.1-mini")
 
 
@@ -37,6 +38,9 @@ class State(TypedDict):
     # (in this case, it appends messages to the list, rather than overwriting them)
     messages: Annotated[list, add_messages]
 
+
+# create memory
+memory = MemorySaver()
 
 # construct the graph
 graph_builder = StateGraph(State)
@@ -58,7 +62,8 @@ graph_builder.add_edge(START, "chatbot")
 # add a node for the tools and add as conditional edge to graph
 # using the prebuilt ToolNode and tools_condition,
 # this will route from the chatbot if the returned ai_message
-# contains a call to tools
+# contains an attribute "tool_calls", which is the universal
+# standard in LLMs to show that a tool needs to be called.
 tool_node = ToolNode(tools=[tool])
 graph_builder.add_node("tools", tool_node)
 
@@ -71,12 +76,15 @@ graph_builder.add_conditional_edges(
 graph_builder.add_edge("tools", "chatbot")
 
 # compile the graph
-graph = graph_builder.compile()
+graph = graph_builder.compile(checkpointer=memory)
 
 
 def stream_graph_updates(user_input: str):
     """Process user input messages and return the answer."""
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
+    for event in graph.stream(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config,
+    ):
         for value in event.values():
             print("Assistant: ", value["messages"][-1].content)
 
@@ -90,11 +98,14 @@ def main():
                 print("Goodbye my friend!")
                 break
             stream_graph_updates(user_input)
+            # inspect state
+            snapshot = graph.get_state(config)
+            print(snapshot)
         except:
             # fallback if input() is not available
-            user_input = "What do you know about Iron Maiden?"
-            print("User: " + user_input)
-            stream_graph_updates(user_input)
+            # user_input = "What do you know about Iron Maiden?"
+            # print("User: " + user_input)
+            # stream_graph_updates(user_input)
             break
 
 
