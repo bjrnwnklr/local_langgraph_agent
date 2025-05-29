@@ -39,8 +39,6 @@ class State(TypedDict):
     # in the annotation defines how this state key should be updated
     # (in this case, it appends messages to the list, rather than overwriting them)
     messages: Annotated[list, add_messages]
-    name: str
-    birthday: str
 
 
 # create memory
@@ -50,46 +48,10 @@ memory = MemorySaver()
 graph_builder = StateGraph(State)
 
 
-# define tools
-@tool
-# Note that because we are generating a ToolMessage for a state update, we
-# generally require the ID of the corresponding tool call. We can use
-# LangChain's InjectedToolCallId to signal that this argument should not
-# be revealed to the model in the tool's schema.
-def human_assistance(
-    name: str, birthday: str, tool_call_id: Annotated[str, InjectedToolCallId]
-) -> str:
-    """Request assistance from a human."""
-    human_response = interrupt(
-        {
-            "question": "Is this correct?",
-            "name": name,
-            "birthday": birthday,
-        }
-    )
-    # if the information is correct, update the state as-is.
-    if human_response.get("correct", "").lower().startswith("y"):
-        verified_name = name
-        verified_birthday = birthday
-        response = "Correct"
-    else:
-        verified_name = human_response.get("name", name)
-        verified_birthday = human_response.get("birthday", birthday)
-        response = f"Made a correction: {human_response}"
-
-    # explicitely update the state with a ToolMessage inside
-    # the tool.
-    state_update = {
-        "name": verified_name,
-        "birthday": verified_birthday,
-        "messages": [ToolMessage(response, tool_call_id=tool_call_id)],
-    }
-    # return a Command object in the tool to update the state
-    return Command(update=state_update)
-
-
 search_tool = TavilySearch(max_results=2)
-tools = [search_tool, human_assistance]
+tools = [
+    search_tool,
+]
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -138,35 +100,54 @@ def stream_graph_updates(user_input: str):
 
 def main():
 
-    user_input = """Can you look up when LangGraph was released?
-        When you have the answer, use the human_assistance tool for review."""
     config = {"configurable": {"thread_id": "1"}}
-
     events = graph.stream(
-        {"messages": [{"role": "user", "content": user_input}]},
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": (
+                        """I'm learning LangGraph. Could you do some research on it for me?"""
+                    ),
+                },
+            ],
+        },
         config,
         stream_mode="values",
     )
-
     for event in events:
         if "messages" in event:
             event["messages"][-1].pretty_print()
 
-    snapshot = graph.get_state(config)
-    print(snapshot)
-    print(snapshot.next)
-
-    human_command = Command(
-        resume={
-            "name": "LangGraph",
-            "birthday": "Jan 17, 2024",
+    events = graph.stream(
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": (
+                        "Ya that's helpful. Maybe I'll "
+                        "build an autonomous agent with it!"
+                    ),
+                },
+            ],
         },
+        config,
+        stream_mode="values",
     )
-
-    events = graph.stream(human_command, config, stream_mode="values")
     for event in events:
         if "messages" in event:
             event["messages"][-1].pretty_print()
+
+    # replay the conversation
+    to_replay = None
+    for state in graph.get_state_history(config):
+        print("Num messages: ", len(state.values["messages"]), "Next: ", state.next)
+        print("-" * 80)
+        if len(state.values["messages"]) == 5:
+            to_replay = state
+
+    print(to_replay.next)
+    print(to_replay.config)
 
     # while True:
     #     try:
