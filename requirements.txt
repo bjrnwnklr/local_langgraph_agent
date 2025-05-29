@@ -1,7 +1,4 @@
-langchain
-langgraph
-langgraph-cli[inmem]
-ollama
-langchain_chroma
-chromadb
+black
 python-dotenv
+langgraph
+langchain[openai]
