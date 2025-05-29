@@ -1,0 +1,6 @@
+langchain
+langgraph
+langgraph-cli[inmem]
+langchain-community
+chromadb
+python-dotenv
