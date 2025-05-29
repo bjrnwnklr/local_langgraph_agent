@@ -1,6 +1,7 @@
 langchain
 langgraph
 langgraph-cli[inmem]
-langchain-community
+ollama
+langchain_chroma
 chromadb
 python-dotenv

@@ -11,14 +11,12 @@ from pathlib import Path
 
 from langgraph.prebuilt import create_react_agent
 from langchain.memory import ConversationBufferMemory
-from langchain_community.chat_models import (
-    ChatOllama,
-)  # local LLM
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_ollama import ChatOllama  # local LLM
+from langchain_ollama import OllamaEmbeddings
+from langchain_chroma import Chroma
 
 DATA_PATH = Path("./data/chroma")  # persistent vector store
-MODEL_NAME = os.getenv("OLLAMA_MODEL", "llama3")
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "mistral:7b-instruct-q4_0")
 TEMPERATURE = float(os.getenv("TEMP", 0.7))
 
 
@@ -40,12 +38,10 @@ def make_retriever():
 
 def build_agent():
     llm = make_llm()
-    memory = ConversationBufferMemory(return_messages=True)
     agent = create_react_agent(
         model=llm,
         tools=[],  # add tools later (e.g. browser, file-ops)
         prompt="You are a helpful research assistant.",
-        memory=memory,
     )
     return agent
 
@@ -57,5 +53,19 @@ if __name__ == "__main__":
         user = input("\n👤  ")
         if user.lower() in {"quit", "exit"}:
             break
+
         result = agent.invoke({"messages": [{"role": "user", "content": user}]})
-        print("🤖 ", result.content)
+
+        # result is an AddableValuesDict; pull out the text
+        response_text = None
+        messages = result.get("messages")
+        if messages:
+            # messages is a list with 2 entries, "HumanMessage" and "AIMessage"
+            last = messages[-1]
+            # message objects have a .content attribute
+            response_text = getattr(last, "content", str(last))
+        if response_text is None:
+            # fallback to full dict repr
+            response_text = str(result)
+
+        print("🤖", response_text)

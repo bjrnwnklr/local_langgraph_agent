@@ -57,11 +57,12 @@ pip install -r requirements.txt
 # one‑liner inside WSL2 Debian 12 (requires curl)
 curl -fsSL https://ollama.com/install.sh | sh
 
-# pull a 3–7 GB model (e.g. Llama 3)
-ollama pull llama3
-
 # start the daemon in the background (listens on 127.0.0.1:11434)
 ollama serve &
+
+# pull a 3–7 GB model (e.g. Llama 3)
+ollama pull mistral:7b-instruct-q4_0
+# ollama pull llama3
 ```
 
 _The port is bound to localhost inside WSL2; your Windows host can still reach it at **`http://localhost:11434`** thanks to the automatic port proxy._
