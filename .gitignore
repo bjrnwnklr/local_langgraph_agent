@@ -1,6 +1,9 @@
 # local secrets
 .local.env
 
+# langgraph checkpoints etc
+.langgraph_api/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
