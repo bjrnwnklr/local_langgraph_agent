@@ -4,3 +4,6 @@ langgraph
 langchain[openai]
 langchain-tavily
 IPython
+openai
+pandas
+scikit-learn
