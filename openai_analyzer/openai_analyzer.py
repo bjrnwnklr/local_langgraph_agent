@@ -131,7 +131,8 @@ def second_pass_with_embeddings(df):
     logging.info("Requesting embeddings for questions...")
     embed_resp = client.embeddings.create(
         model="text-embedding-3-small", input=questions
-    )["data"]
+    )
+    print(embed_resp)
     vectors = np.array([e["embedding"] for e in embed_resp])
     # Cluster
     logging.info("Clustering embeddings...")
