@@ -8,7 +8,7 @@ import logging
 from utils import openai_utils
 
 # DBSCAN hyperparameters (can be tuned or made configurable)
-EPSILON = 0.7  # maximum distance for points to be considered in the same cluster (for cosine distance)
+EPSILON = 0.5  # maximum distance for points to be considered in the same cluster (for cosine distance)
 MIN_SAMPLES = 3  # minimum points to form a dense cluster
 
 
