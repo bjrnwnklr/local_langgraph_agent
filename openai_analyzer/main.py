@@ -99,7 +99,7 @@ def main():
 
     # Prepare output file paths (timestamped, based on input file name)
     # check if "output" folder exists
-    outpath = input_path / "output"
+    outpath = input_path.parent / "output"
     if not outpath.exists():
         outpath.mkdir()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

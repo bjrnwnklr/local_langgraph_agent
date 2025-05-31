@@ -8,7 +8,7 @@ import logging
 from utils import openai_utils
 
 # DBSCAN hyperparameters (can be tuned or made configurable)
-EPSILON = 4  # maximum distance for points to be considered in the same cluster (for cosine distance)
+EPSILON = 0.8  # maximum distance for points to be considered in the same cluster (for cosine distance)
 MIN_SAMPLES = 3  # minimum points to form a dense cluster
 
 
@@ -26,10 +26,12 @@ def cluster_and_label(df):
     X = np.array(embeddings, dtype=float)
     # Normalize embeddings to unit length (for cosine similarity-based clustering)
     # (Cosine distance = 1 - cosine_similarity; by normalizing, Euclidean distance correlates with cosine distance)
-    X_norm = X / np.linalg.norm(X, axis=1, keepdims=True)
+    # X_norm = X / np.linalg.norm(X, axis=1, keepdims=True)
     # Perform DBSCAN clustering with cosine distance metric
     clustering_model = DBSCAN(eps=EPSILON, min_samples=MIN_SAMPLES, metric="cosine")
-    labels = clustering_model.fit_predict(X_norm)
+    labels = clustering_model.fit_predict(X)
+    # log the labels generated
+    logging.info(f"{EPSILON=} - Created labels: {labels}")
     df["cluster_id"] = labels  # add cluster assignments to DataFrame
 
     # Determine unique clusters (excluding noise label -1)

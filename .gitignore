@@ -4,6 +4,9 @@
 # langgraph checkpoints etc
 .langgraph_api/
 
+# output directory
+output/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
