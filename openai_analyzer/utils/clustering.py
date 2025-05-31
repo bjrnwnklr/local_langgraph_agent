@@ -8,7 +8,7 @@ import logging
 from utils import openai_utils
 
 # DBSCAN hyperparameters (can be tuned or made configurable)
-EPSILON = 0.8  # maximum distance for points to be considered in the same cluster (for cosine distance)
+EPSILON = 0.7  # maximum distance for points to be considered in the same cluster (for cosine distance)
 MIN_SAMPLES = 3  # minimum points to form a dense cluster
 
 
@@ -52,6 +52,8 @@ def cluster_and_label(df):
     # Optionally label noise/outliers as "Other" for completeness
     if -1 in set(labels):
         cluster_labels[-1] = "Other"  # all noise points considered "Other"
+
+    logging.info(f"Cluster labels: {cluster_labels}")
     return cluster_labels
 
 
