@@ -6,7 +6,12 @@ import json
 import logging
 import openai
 import time
-from config import OPENAI_COMPLETION_MODEL, OPENAI_EMBEDDING_MODEL, OPENAI_LABEL_MODEL
+from config import (
+    OPENAI_COMPLETION_MODEL,
+    OPENAI_EMBEDDING_MODEL,
+    OPENAI_LABEL_MODEL,
+    client,
+)
 
 # Simple in-memory cache for classification results to avoid duplicate API calls
 _classification_cache = {}
@@ -36,7 +41,7 @@ def classify_query(user_question, chatbot_answer):
 
     # Call the OpenAI ChatCompletion API
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=OPENAI_COMPLETION_MODEL,
             messages=messages,
             temperature=0,  # using deterministic output for consistency
@@ -45,11 +50,11 @@ def classify_query(user_question, chatbot_answer):
         logging.error(f"OpenAI API error during classification: {e}")
         # Simple retry once after a brief pause
         time.sleep(2)
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=OPENAI_COMPLETION_MODEL, messages=messages, temperature=0
         )
     # Extract the content of the assistant's reply
-    reply_content = response["choices"][0]["message"]["content"].strip()
+    reply_content = response.choices[0].message.content.strip()
     # Parse the JSON output
     classification = None
     assessment = None
@@ -113,15 +118,15 @@ def get_embeddings(texts):
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         try:
-            response = openai.Embedding.create(
+            response = client.embeddings.create(
                 model=OPENAI_EMBEDDING_MODEL, input=batch
             )
         except Exception as e:
             logging.error(f"Embedding API call failed: {e}")
             raise
         # Extract embeddings from response (assuming 'data' list of {'embedding': [...]})
-        for item in response["data"]:
-            embeddings.append(item["embedding"])
+        for item in response.data:
+            embeddings.append(item.embedding)
     return embeddings
 
 
@@ -146,14 +151,14 @@ def get_cluster_label(question_list):
         {"role": "user", "content": user_message},
     ]
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=OPENAI_LABEL_MODEL, messages=messages, temperature=0
         )
     except Exception as e:
         logging.error(f"OpenAI API error during cluster labeling: {e}")
         # No retry here, just propagate error or return a default label
         raise
-    label = response["choices"][0]["message"]["content"].strip()
+    label = response.choices[0].message.content.strip()
     # Post-process label: ensure it's a single line and not too long
     label = label.split("\n")[0]  # take first line if model returned multiple lines
     return label
