@@ -1,0 +1,6 @@
+user location,user query,answer,csat,classification,assessment,cluster_id,cluster,cluster_label
+US,How many PTO days do I have left?,"According to our records, you have 5 PTO days remaining.",5.0,Leave/Time Off,fully correct,-1,-1,Other
+US,What are the company holidays for this year?,"Our company holidays this year include New Year’s Day, Memorial Day, Independence Day, Labor Day, Thanksgiving (Thursday and Friday), and Christmas Day.",5.0,Leave/Time Off,fully correct,-1,-1,Other
+US,How do I enroll in the health insurance plan?,You can enroll in the health insurance plan through our HR portal. Log in and select the Benefits enrollment section.,3.0,Benefits,fully correct,-1,-1,Other
+US,What is our 401(k) match policy?,"Our company matches 50% of your 401(k) contributions, up to 6% of your salary.",5.0,Benefits,fully correct,-1,-1,Other
+US,How can I update my direct deposit information?,Update your direct deposit info via the employee self-service portal under Payroll settings. Changes take effect from the next pay cycle.,5.0,Payroll,fully correct,-1,-1,Other

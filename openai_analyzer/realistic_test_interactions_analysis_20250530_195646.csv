@@ -1,6 +1,0 @@
-user location,user query,answer,csat,classification,assessment
-Brazil,How can I access my payslip?,This is the correct answer to: 'How can I access my payslip?',5.0,Payroll & Compensation,fully correct
-Australia,When will my salary be credited?,This is the correct answer to: 'When will my salary be credited?',4.0,Payroll & Compensation,fully correct
-Canada,How do I update my bank details for payroll?,This is the correct answer to: 'How do I update my bank details for payroll?',,Payroll & Compensation,fully correct
-UK,Can I view past salary slips?,This is the correct answer to: 'Can I view past salary slips?',4.0,Payroll & Compensation,fully correct
-Brazil,Where can I see my bonus payments?,This is the correct answer to: 'Where can I see my bonus payments?',4.0,Payroll & Compensation,fully correct

@@ -98,10 +98,14 @@ def main():
             return 1
 
     # Prepare output file paths (timestamped, based on input file name)
+    # check if "output" folder exists
+    outpath = input_path / "output"
+    if not outpath.exists():
+        outpath.mkdir()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     base_name = input_path.stem  # filename without extension
-    enriched_path = input_path.parent / f"{base_name}_enriched_{timestamp}.csv"
-    summary_path = input_path.parent / f"{base_name}_summary_{timestamp}.csv"
+    enriched_path = outpath / f"{base_name}_enriched_{timestamp}.csv"
+    summary_path = outpath / f"{base_name}_summary_{timestamp}.csv"
 
     # Save enriched CSV (with new columns)
     try:
